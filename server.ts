@@ -1,22 +1,21 @@
 import express from 'express';
-import { createServer as createViteServer } from 'vite';
 import Database from 'better-sqlite3';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+dotenv.config();
 
 // ==========================================
 // 1. DATABASE CONFIGURATION & SCHEMA
 // ==========================================
-const db = new Database('database.db');
+const DB_PATH = process.env.DB_PATH || 'database.db';
+const db = new Database(DB_PATH);
 db.pragma('foreign_keys = ON');
 
-const JWT_SECRET = 'sach-secret-key-2024-pfe-excellence'; // In production, move to .env
+const JWT_SECRET = process.env.JWT_SECRET || 'sach-secret-key-2024-pfe-excellence';
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS admin_profile (
@@ -154,7 +153,6 @@ async function startServer() {
       // 1. Check Admin — look up by email first, then fallback to 'admin' username shortcut
       let admin: any = db.prepare('SELECT * FROM admin_profile WHERE email = ?').get(email);
       if (!admin && email === 'admin') {
-        // Allow the special 'admin' username shortcut → fetch the SUPER_ADMIN
         admin = db.prepare("SELECT * FROM admin_profile WHERE role = 'SUPER_ADMIN' LIMIT 1").get();
       }
       if (admin && admin.password) {
@@ -375,15 +373,19 @@ async function startServer() {
 
   // --- VITE / STATIC SERVING ---
   if (process.env.NODE_ENV !== 'production') {
+    // Dev mode: use Vite middleware (dynamically imported so it doesn't affect production build)
+    const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
     });
     app.use(vite.middlewares);
   } else {
-    app.use(express.static(path.join(__dirname, 'dist')));
+    // Production: serve the built frontend from dist/
+    const distPath = path.join(__dirname, 'dist');
+    app.use(express.static(distPath));
     app.get('*', (req, res) => {
-      res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+      res.sendFile(path.join(distPath, 'index.html'));
     });
   }
 
@@ -396,7 +398,7 @@ async function startServer() {
     });
   });
 
-  const PORT = 3000;
+  const PORT = parseInt(process.env.PORT || '3000', 10);
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`S.A.C.H Server running on http://localhost:${PORT} [JWT SECURED]`);
   });
