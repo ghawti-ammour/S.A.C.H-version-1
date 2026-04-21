@@ -1,5 +1,5 @@
 import express from 'express';
-import Database from 'better-sqlite3';
+import mysql from 'mysql2/promise';
 import path from 'path';
 import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
@@ -12,8 +12,22 @@ dotenv.config();
 // 1. DATABASE CONFIGURATION & SCHEMA
 // ==========================================
 const DB_PATH = process.env.DB_PATH || 'database.db';
-const db = new Database(DB_PATH);
-db.pragma('foreign_keys = ON');
+const db = mysql.createPool({
+  host: process.env.MYSQLHOST,
+  port: parseInt(process.env.MYSQLPORT || '3306'),
+  user: process.env.MYSQLUSER,
+  password: process.env.MYSQLPASSWORD,
+  database: process.env.MYSQLDATABASE,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
+});
+
+// Example query function to replace SQLite queries
+async function queryDatabase(sql, params) {
+  const [rows] = await db.execute(sql, params);
+  return rows;
+}
 
 const JWT_SECRET = process.env.JWT_SECRET || 'sach-secret-key-2024-pfe-excellence';
 
