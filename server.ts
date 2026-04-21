@@ -108,19 +108,19 @@ db.exec(`
 });
 
 // Support legacy migration
-try {
-  db.exec("ALTER TABLE admin_profile ADD COLUMN role TEXT DEFAULT 'ASSISTANT'");
-} catch (e) { }
+await queryDatabase(`ALTER TABLE admin_profile ADD COLUMN role VARCHAR(50) DEFAULT 'ASSISTANT'`, []);
 
 // Seed admin
-const existingAdmin = db.prepare('SELECT * FROM admin_profile WHERE email = ?').get('admin@sach.com') as any;
+const [existingAdmin] = await queryDatabase('SELECT * FROM admin_profile WHERE email = ?', ['admin@sach.com']);
 if (!existingAdmin) {
   const hashedPassword = bcrypt.hashSync('admin', 10);
-  db.prepare('INSERT INTO admin_profile (id, name, email, password, role, profilePhoto) VALUES (?, ?, ?, ?, ?, ?)')
-    .run(uuidv4(), 'Admin User', 'admin@sach.com', hashedPassword, 'SUPER_ADMIN', '');
+  await queryDatabase(
+    'INSERT INTO admin_profile (id, name, email, password, role, profilePhoto) VALUES (?, ?, ?, ?, ?, ?)',
+    [uuidv4(), 'Admin User', 'admin@sach.com', hashedPassword, 'SUPER_ADMIN', '']
+  );
 } else if (!existingAdmin.password.startsWith('$2b$')) {
   const hashedPassword = bcrypt.hashSync(existingAdmin.password, 10);
-  db.prepare('UPDATE admin_profile SET password = ? WHERE id = ?').run(hashedPassword, existingAdmin.id);
+  await queryDatabase('UPDATE admin_profile SET password = ? WHERE id = ?', [hashedPassword, existingAdmin.id]);
 }
 
 // ==========================================
@@ -230,12 +230,14 @@ async function startServer() {
   // --- TEACHER ROUTES ---
   app.get('/api/teachers', authenticateToken, (req, res) => {
     try {
-      const teachers = db.prepare('SELECT * FROM teachers').all();
-      const teachersWithOvertime = teachers.map((t: any) => {
-        const approvedOvertimeModuleIds = db.prepare('SELECT moduleId FROM approved_overtime WHERE teacherId = ?')
-          .all(t.id).map((row: any) => row.moduleId);
-        return { ...t, approvedOvertimeModuleIds };
-      });
+      const teachers = await queryDatabase('SELECT * FROM teachers', []);
+      const teachersWithOvertime = await Promise.all(
+        teachers.map(async (t: any) => {
+          const approvedOvertimeModuleIds = (await queryDatabase('SELECT moduleId FROM approved_overtime WHERE teacherId = ?', [t.id]))
+            .map((row: any) => row.moduleId);
+          return { ...t, approvedOvertimeModuleIds };
+        })
+      );
       res.json(teachersWithOvertime);
     } catch (e) { res.status(500).json({ error: 'Fetch failed' }); }
   });
