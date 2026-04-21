@@ -288,6 +288,13 @@ async function startServer() {
     } catch (err) { next(err); }
   });
 
+  app.delete('/api/parcours/:id', authenticateToken, isAdmin, (req, res, next) => {
+    try {
+      db.prepare('DELETE FROM parcours WHERE id = ?').run(req.params.id);
+      res.json({ success: true });
+    } catch (err) { next(err); }
+  });
+
   // --- MODULE ROUTES ---
   app.get('/api/modules', authenticateToken, (req, res) => {
     res.json(db.prepare('SELECT * FROM modules').all());
@@ -305,6 +312,13 @@ async function startServer() {
     } catch (err) {
       next(err);
     }
+  });
+
+  app.delete('/api/modules/:id', authenticateToken, isAdmin, (req, res, next) => {
+    try {
+      db.prepare('DELETE FROM modules WHERE id = ?').run(req.params.id);
+      res.json({ success: true });
+    } catch (err) { next(err); }
   });
 
   // --- ASSIGNMENT ROUTES ---
