@@ -24,7 +24,7 @@ const db = mysql.createPool({
 });
 
 // Example query function to replace SQLite queries
-async function queryDatabase(sql, params) {
+async function queryDatabase(sql: string, params: any[]): Promise<any[]> {
   const [rows] = await db.execute(sql, params);
   return rows;
 }
@@ -33,78 +33,79 @@ const JWT_SECRET = process.env.JWT_SECRET || 'sach-secret-key-2024-pfe-excellenc
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS admin_profile (
-    id TEXT PRIMARY KEY,
-    name TEXT,
-    email TEXT UNIQUE,
-    password TEXT,
-    role TEXT DEFAULT 'ASSISTANT', 
+    id VARCHAR(36) PRIMARY KEY,
+    name VARCHAR(255),
+    email VARCHAR(255) UNIQUE,
+    password VARCHAR(255),
+    role VARCHAR(50) DEFAULT 'ASSISTANT',
     profilePhoto TEXT
   );
 
   CREATE TABLE IF NOT EXISTS teachers (
-    id TEXT PRIMARY KEY,
-    name TEXT,
-    email TEXT UNIQUE,
-    password TEXT,
-    grade TEXT,
-    specialty TEXT,
-    status TEXT,
-    requiredHours INTEGER,
+    id VARCHAR(36) PRIMARY KEY,
+    name VARCHAR(255),
+    email VARCHAR(255) UNIQUE,
+    password VARCHAR(255),
+    grade VARCHAR(50),
+    specialty VARCHAR(50),
+    status VARCHAR(50),
+    requiredHours INT,
     profilePhoto TEXT
   );
 
   CREATE TABLE IF NOT EXISTS approved_overtime (
-    teacherId TEXT,
-    moduleId TEXT,
+    teacherId VARCHAR(36),
+    moduleId VARCHAR(36),
     PRIMARY KEY (teacherId, moduleId),
     FOREIGN KEY (teacherId) REFERENCES teachers(id) ON DELETE CASCADE
   );
 
   CREATE TABLE IF NOT EXISTS parcours (
-    id TEXT PRIMARY KEY,
-    name TEXT,
-    type TEXT,
-    level TEXT,
-    year INTEGER,
-    specialty TEXT,
+    id VARCHAR(36) PRIMARY KEY,
+    name VARCHAR(255),
+    type VARCHAR(50),
+    level VARCHAR(50),
+    year INT,
+    specialty VARCHAR(50),
     description TEXT
   );
 
   CREATE TABLE IF NOT EXISTS modules (
-    id TEXT PRIMARY KEY,
-    code TEXT,
-    name TEXT,
-    semester INTEGER,
-    cmHours INTEGER,
-    tdHours INTEGER,
-    tpHours INTEGER,
-    parcoursId TEXT,
+    id VARCHAR(36) PRIMARY KEY,
+    code VARCHAR(50),
+    name VARCHAR(255),
+    semester INT,
+    cmHours INT,
+    tdHours INT,
+    tpHours INT,
+    parcoursId VARCHAR(36),
     FOREIGN KEY (parcoursId) REFERENCES parcours(id) ON DELETE CASCADE
   );
 
   CREATE TABLE IF NOT EXISTS assignments (
-    id TEXT PRIMARY KEY,
-    teacherId TEXT,
-    moduleId TEXT,
-    type TEXT,
-    hours INTEGER,
+    id VARCHAR(36) PRIMARY KEY,
+    teacherId VARCHAR(36),
+    moduleId VARCHAR(36),
+    type VARCHAR(50),
+    hours INT,
     FOREIGN KEY (teacherId) REFERENCES teachers(id) ON DELETE CASCADE,
     FOREIGN KEY (moduleId) REFERENCES modules(id) ON DELETE CASCADE
   );
 
   CREATE TABLE IF NOT EXISTS messages (
-    id TEXT PRIMARY KEY,
-    senderId TEXT,
-    receiverId TEXT,
+    id VARCHAR(36) PRIMARY KEY,
+    senderId VARCHAR(36),
+    receiverId VARCHAR(36),
     content TEXT,
-    createdAt TEXT,
-    status TEXT,
-    moduleId TEXT,
-    moduleType TEXT,
-    hours INTEGER,
-    isRead INTEGER DEFAULT 0
+    createdAt DATETIME,
+    status VARCHAR(50),
+    moduleId VARCHAR(36),
+    moduleType VARCHAR(50),
+    hours INT,
+    isRead TINYINT DEFAULT 0
   );
-`);
+`, []);
+});
 
 // Support legacy migration
 try {
