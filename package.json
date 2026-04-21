@@ -1,9 +1,10 @@
 {
-  "name": "react-example",
+  "name": "système-affectation-et-charge-horaires",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "start": "node server.js",
     "dev": "tsx server.ts",
     "build": "vite build",
     "preview": "vite preview",
