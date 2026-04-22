@@ -19,7 +19,7 @@ async function startServer() {
   app.use(express.json());
 
   // API Routes
-  app.use('/api/auth', authRoutes);
+  app.use('/api', authRoutes);
   app.use('/api/teachers', teacherRoutes);
   app.use('/api/modules', moduleRoutes);
   app.use('/api/assignments', assignmentRoutes);
